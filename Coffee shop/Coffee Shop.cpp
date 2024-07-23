@@ -11,6 +11,8 @@ Coffee_Shop::Coffee_Shop()
 	this->name = "";
 	this->menuSize = 0;
 	this->menu = nullptr;
+	this->pendingOrders = nullptr;
+	this->orderNumber = 0;
 }
 
 Coffee_Shop::Coffee_Shop(string name)
@@ -18,6 +20,8 @@ Coffee_Shop::Coffee_Shop(string name)
 	this->name = name;
 	this->menuSize = 0;
 	this->menu = nullptr;
+	this->pendingOrders = nullptr;
+	this->orderNumber = 0;
 }
 
 Coffee_Shop::~Coffee_Shop()
@@ -27,6 +31,12 @@ Coffee_Shop::~Coffee_Shop()
 		delete this->menu[i];
 	}
 	delete[] menu;
+
+	for (int i = 0; i < this->orderNumber; i++)
+	{
+		delete this->pendingOrders[i];
+	}
+	delete[] this->pendingOrders;
 }
 #pragma endregion
 
@@ -454,5 +464,53 @@ void Coffee_Shop::readMenuFromFile()
 		this->menu[i]->readFromFile(&this->menuFile);
 	}
 	this->menuFile.close();
+}
+#pragma endregion
+
+#pragma region SOKCKET COMMUNICATION
+void Coffee_Shop::configureServer()
+{
+	WSADATA wsaData;
+	int result = WSAStartup(MAKEWORD(2, 2), &wsaData);
+
+	int server = socket(AF_INET, SOCK_STREAM, 0);
+
+	struct sockaddr_in address;
+	address.sin_port = htons(2000);
+	address.sin_family = AF_INET;
+	address.sin_addr.s_addr = INADDR_ANY;
+
+	int res = bind(server, (struct sockaddr*) & address, sizeof(address));
+
+	if (res == 0)
+	{
+		res = listen(server, 10);
+
+		if (res == 0)
+		{
+			struct sockaddr_in clientAddr;
+			int clientAddrSize = sizeof(clientAddr);
+			int client = accept(server,(struct sockaddr*) & clientAddr, &clientAddrSize);
+			if (client >= 0)
+			{
+				char buffer[20];
+				strcpy(buffer, this->name.c_str());
+				send(client, buffer, sizeof(buffer),0);
+			}
+			else
+			{
+				cout << "Couldn't accept connection" << endl;
+			}
+		}
+		else
+		{
+			cout << "Error in server listening" << endl;
+		}
+	}
+	else
+	{
+		cout << "Error in server binding" << endl;
+	}
+	WSACleanup();
 }
 #pragma endregion
