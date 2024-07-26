@@ -13,6 +13,9 @@ using namespace std;
 
 #define FILENAME "menu.txt"
 
+#define CODE_ORDER "1000"
+#define CODE_EXIT "2000"
+
 class Coffee_Shop
 {
 private: 
@@ -22,6 +25,7 @@ private:
 	fstream menuFile;
 	Order** pendingOrders;
 	int orderNumber;
+	int serverFD;
 	
 public:
 	//CONSTRUCTORS & DESTRUCTORS
@@ -43,10 +47,14 @@ public:
 	void editDrinkPrice();
 	void deleteDrink();
 
+	//ORDER MANIPULATION
+	void addOrder(Order* o);
+
 	//FILE MANIPULATION
 	void writeMenuToFile();
 	void readMenuFromFile();
 
 	//SOCKET COMMUNICATION
 	void configureServer();
+	static DWORD WINAPI acceptClients(LPVOID p);
 };

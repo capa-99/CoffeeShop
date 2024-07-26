@@ -1,1 +1,13 @@
+3
+0
+Espresso
+120
+1
+0
+Americano
+150
+1
+1
+Peppermint
+100
 0

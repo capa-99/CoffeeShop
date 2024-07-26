@@ -5,6 +5,7 @@
 #include <iostream>
 #include <typeinfo>
 
+
 #pragma region CONSTRUCTORS & DESTRUCTORS
 Coffee_Shop::Coffee_Shop()
 {
@@ -37,6 +38,8 @@ Coffee_Shop::~Coffee_Shop()
 		delete this->pendingOrders[i];
 	}
 	delete[] this->pendingOrders;
+	shutdown(this->serverFD, SD_BOTH);
+	WSACleanup();
 }
 #pragma endregion
 
@@ -422,6 +425,22 @@ void Coffee_Shop::deleteDrink()
 }
 #pragma endregion
 
+#pragma region ORDER MANIPULATION
+void Coffee_Shop::addOrder(Order *o)
+{
+	Order** tmp = this->pendingOrders;
+	this->orderNumber++;
+	this->pendingOrders = new Order * [this->orderNumber];
+	for (int i = 0; i < this->orderNumber - 1; i++)
+	{
+		this->pendingOrders[i] = new Order;
+		this->pendingOrders[i] = tmp[i];
+	}
+	this->pendingOrders[this->orderNumber - 1] = o;
+	delete[] tmp;
+}
+#pragma endregion
+
 #pragma region FILE MANIPULATION
 void Coffee_Shop::writeMenuToFile()
 {
@@ -473,34 +492,25 @@ void Coffee_Shop::configureServer()
 	WSADATA wsaData;
 	int result = WSAStartup(MAKEWORD(2, 2), &wsaData);
 
-	int server = socket(AF_INET, SOCK_STREAM, 0);
+	this->serverFD = socket(AF_INET, SOCK_STREAM, 0);
 
 	struct sockaddr_in address;
 	address.sin_port = htons(2000);
 	address.sin_family = AF_INET;
 	address.sin_addr.s_addr = INADDR_ANY;
 
-	int res = bind(server, (struct sockaddr*) & address, sizeof(address));
+	int res = bind(this->serverFD, (struct sockaddr*) & address, sizeof(address));
 
 	if (res == 0)
 	{
-		res = listen(server, 10);
+		res = listen(this->serverFD, 10);
 
 		if (res == 0)
 		{
-			struct sockaddr_in clientAddr;
-			int clientAddrSize = sizeof(clientAddr);
-			int client = accept(server,(struct sockaddr*) & clientAddr, &clientAddrSize);
-			if (client >= 0)
-			{
-				char buffer[20];
-				strcpy(buffer, this->name.c_str());
-				send(client, buffer, sizeof(buffer),0);
-			}
-			else
-			{
-				cout << "Couldn't accept connection" << endl;
-			}
+			DWORD threadID;
+			HANDLE thr = CreateThread(NULL, 0, acceptClients, this, 0, &threadID);
+
+			
 		}
 		else
 		{
@@ -511,6 +521,62 @@ void Coffee_Shop::configureServer()
 	{
 		cout << "Error in server binding" << endl;
 	}
-	WSACleanup();
+
+}
+
+DWORD WINAPI Coffee_Shop::acceptClients(LPVOID p)
+{
+	Coffee_Shop* instance = static_cast<Coffee_Shop*>(p);
+	struct sockaddr_in clientAddr;
+	int clientAddrSize = sizeof(clientAddr);
+	while (1)
+	{
+		int client = accept(instance->serverFD, (struct sockaddr*)&clientAddr, &clientAddrSize);
+		if (client >= 0)
+		{
+			char buffer[20];
+			string message;
+			strcpy(buffer, instance->name.c_str());
+			send(client, buffer, 20, 0);
+			message = to_string(instance->menuSize);
+			strcpy(buffer, message.c_str());
+			send(client, buffer, 20, 0);
+			for (int i = 0; i < instance->menuSize; i++)
+			{
+				if (typeid(*instance->menu[i]) == typeid(Coffee))
+				{
+					strcpy(buffer, "Coffee");
+				}
+				else
+				{
+					strcpy(buffer, "Tea");
+				}
+				send(client, buffer, 20, 0);
+				strcpy(buffer, instance->menu[i]->getName().c_str());
+				send(client, buffer, 20, 0);
+				message = to_string(instance->menu[i]->getPrice());
+				strcpy(buffer, message.c_str());
+				send(client, buffer, 20, 0);
+				strcpy(buffer, instance->menu[i]->getTypeString().c_str());
+				send(client, buffer, 20, 0);
+			}
+			int recvSize = recv(client, buffer, 20, 0);
+			if (strcmp(buffer, CODE_ORDER)==0)
+			{
+				//create an order and ad price, cup and toppings
+				recvSize = recv(client, buffer, 20, 0);//HANDLE drink
+				recvSize = recv(client, buffer, 20, 0);//cup
+				recvSize = recv(client, buffer, 20, 0);//toppings
+				Order* order = new Order();
+				instance->addOrder(order);
+			}
+			closesocket(client);
+		}
+		else
+		{
+			cout << "Couldn't accept connection" << endl;
+		}
+	}
+	return 0;
 }
 #pragma endregion

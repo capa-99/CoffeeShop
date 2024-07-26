@@ -3,24 +3,24 @@
 #pragma region CONSTRUCTORS & DESTRUCTORS
 Order::Order()
 {
-	this->beverages = nullptr;
-	this->beverageNumber = 0;
 	this->user = nullptr;
+	this->orderPrice = 0
 }
 
-Order::Order(User* u)
+Order::Order(float price)
 {
-	this->beverages = nullptr;
-	this->beverageNumber = 0;
+	this->user = nullptr;
+	this->base_price = price;
+}
+
+Order::Order(User* u, float price)
+{
 	this->user = u;
+	this->base_price = price;
 }
 
 Order::~Order()
 {
-	for (int i = 0; i < this->beverageNumber; i++)
-	{
-		delete this->beverages[i];
-	}
-	delete[] this->beverages;
+
 }
 #pragma endregion

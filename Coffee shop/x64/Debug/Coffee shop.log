@@ -1,10 +1,4 @@
-﻿  Coffee Shop.cpp
-C:\Users\Novak\Desktop\OOP project\OOP projekat\Coffee shop\Coffee shop\Coffee Shop.cpp(476,13): warning C4244: 'initializing': conversion from 'SOCKET' to 'int', possible loss of data
-C:\Users\Novak\Desktop\OOP project\OOP projekat\Coffee shop\Coffee shop\Coffee Shop.cpp(493,15): warning C4244: 'initializing': conversion from 'SOCKET' to 'int', possible loss of data
-  User.cpp
-C:\Users\Novak\Desktop\OOP project\OOP projekat\Coffee shop\Coffee shop\User.cpp(145,9): warning C4244: 'initializing': conversion from 'SOCKET' to 'int', possible loss of data
-C:\Users\Novak\Desktop\OOP project\OOP projekat\Coffee shop\Coffee shop\User.cpp(157,26): warning C4267: 'argument': conversion from 'size_t' to 'int', possible loss of data
-  client.cpp
+﻿  client.cpp
   server.cpp
   Generating Code...
   LINK : C:\Users\Novak\Desktop\OOP project\OOP projekat\Coffee shop\x64\Debug\Coffee shop.exe not found or not built by the last incremental link; performing full link

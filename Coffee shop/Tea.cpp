@@ -43,20 +43,20 @@ string Tea::getTypeString()
 #pragma region PRINTING
 void Tea::showBeverage()
 {
-	cout << left << setw(10) << "Tea" << setw(20) << this->getName() << setw(8) << this->getBasePrice() << setw(5) << this->getTypeString() << endl;
+	cout << left << setw(10) << "Tea" << setw(20) << this->getName() << setw(8) << this->getPrice() << setw(5) << this->getTypeString() << endl;
 }
 #pragma endregion
 
 #pragma region FILE MANAGEMENT
 void Tea::writeToFile(fstream* f)
 {
-	*f << this->getName() << endl << this->getBasePrice() << endl << this->getType() << endl;
+	*f << this->getName() << endl << this->getPrice() << endl << this->getType() << endl;
 }
 
 void Tea::readFromFile(fstream* f)
 {
 	int t;
-	*f >> this->name >> this->base_price >> t;
+	*f >> this->name >> this->price >> t;
 	this->type = (teaType)t;
 }
 #pragma endregion

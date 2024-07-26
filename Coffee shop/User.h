@@ -8,6 +8,11 @@
 
 using namespace std;
 
+#define BUFFER_SIZE 20
+
+#define CODE_ORDER "1000"
+#define CODE_EXIT "2000"
+
 class User
 {
 private:
@@ -34,4 +39,5 @@ public:
 
 	//SOCKET COMMUNICATION
 	void connectToCoffeeShop();
+	void order(int fd, int menuSize);
 };
