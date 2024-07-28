@@ -36,6 +36,7 @@ public:
 	//PRINTING
 	void welcomePage();
 	void showMenu();
+	void showOrders();
 
 	//SELECTION
 	void mainPageSelect();

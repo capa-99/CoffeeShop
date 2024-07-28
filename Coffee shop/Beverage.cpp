@@ -3,15 +3,13 @@
 #pragma region CONSTRUCTORS & DESTRUCTORS
 Beverage::Beverage()
 {
-    this->base_price = 0;
-    this->cup = small;
+    this->price = 0;
     this->name = "";
 }
 
 Beverage::Beverage(string name, float price)
 {
-    this->base_price = price;
-    this->cup = small;
+    this->price = price;
     this->name = name;
 }
 

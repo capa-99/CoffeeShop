@@ -359,7 +359,7 @@ void User::order(int fd, int menuSize)
 		default:
 		{
 			toppNum++;
-			toppings = toppings * 10 + topp;
+			toppings = toppings * 10 + topp -1;
 		}
 		}
 	}

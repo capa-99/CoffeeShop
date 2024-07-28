@@ -53,16 +53,30 @@ void Coffee_Shop::welcomePage()
 	cout << "***********************************************************************************************" << endl;
 }
 
+void Coffee_Shop::showOrders()
+{
+	HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
+	SetConsoleTextAttribute(hConsole, 12);
+	cout << "PENDING ORDERS: " << endl;
+	cout << left << setw(8) << "Number: " << setw(20) << "Drink name: " << setw(12) <<  "Cup size: " << setw(50) << "Toppings: "  << setw(8) << "Price: "  << setw(10) << "Customer: " << endl;
+	SetConsoleTextAttribute(hConsole, 14);
+	for (int i = 0; i < this->orderNumber; i++)
+	{
+		cout <<left << setw(8) << (i+1);
+		this->pendingOrders[i]->showOrder();
+	}
+}
+
 void Coffee_Shop::showMenu()
 {
 	HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
 	SetConsoleTextAttribute(hConsole, 12);
 	cout << "~~~~~~~~~~ MENU ~~~~~~~~~~" << endl;
-	cout << left << setw(8) << "Number: " << setw(10) << "Beverage: " << setw(20) <<  "Name: " << setw(8) << "Price : "  << setw(8) << "Type: " << endl;
+	cout << left << setw(8) << "Number: " << setw(10) << "Beverage: " << setw(20) << "Name: " << setw(8) << "Price : " << setw(8) << "Type: " << endl;
 	SetConsoleTextAttribute(hConsole, 14);
 	for (int i = 0; i < this->menuSize; i++)
 	{
-		cout <<left << setw(8) << (i+1);
+		cout << left << setw(8) << (i + 1);
 		this->menu[i]->showBeverage();
 	}
 }
@@ -79,11 +93,12 @@ void Coffee_Shop::mainPageSelect()
 		cout << "2. Manage drink prices on the menu" << endl;
 		cout << "3. Remove drink from the menu" << endl;
 		cout << "4. Show the menu" << endl;
+		cout << "5. Show pending orders" << endl;
 		cout << "0. Exit" << endl;
 		try
 		{
 			cin >> choice;
-			while(cin.fail() || choice > 4)
+			while(cin.fail() || choice > 5)
 			{
 				HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
 				SetConsoleTextAttribute(hConsole, 4);
@@ -134,6 +149,12 @@ void Coffee_Shop::mainPageSelect()
 			system("cls");
 			this->welcomePage();
 			this->showMenu();
+		}break;
+		case 5:
+		{
+			system("cls");
+			this->welcomePage();
+			this->showOrders();
 		}break;
 		case 0:
 		{
@@ -563,14 +584,23 @@ DWORD WINAPI Coffee_Shop::acceptClients(LPVOID p)
 			int recvSize = recv(client, buffer, 20, 0);
 			if (strcmp(buffer, CODE_ORDER)==0)
 			{
-				//create an order and ad price, cup and toppings
-				recvSize = recv(client, buffer, 20, 0);//HANDLE drink
-				recvSize = recv(client, buffer, 20, 0);//cup
-				recvSize = recv(client, buffer, 20, 0);//toppings
-				Order* order = new Order();
-				instance->addOrder(order);
+				recvSize = recv(client, buffer, 20, 0);
+				int numb = atoi(buffer);
+				Order* o = new Order(instance->menu[numb]);
+				recvSize = recv(client, buffer, 20, 0);
+				numb = atoi(buffer);
+				o->addCupSize((cupSize)numb);
+				recvSize = recv(client, buffer, 20, 0);
+				numb = atoi(buffer);
+				while (numb > 0)
+				{
+					o->addTopping((topping)(numb % 10));
+					numb = numb / 10;
+				}
+				instance->addOrder(o);
+				o->calculatePrice();
 			}
-			closesocket(client);
+			//closesocket(client);
 		}
 		else
 		{

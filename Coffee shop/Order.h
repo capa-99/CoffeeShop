@@ -1,6 +1,8 @@
 #pragma once
+#include "Beverage.h"
 #include "User.h"
 #include <vector>
+#include <iomanip>
 
 #pragma region ENUMS
 enum topping
@@ -27,9 +29,9 @@ enum cupSize
 class Order
 {
 private:
+    Beverage* drink;
     cupSize cup;
     vector<topping> toppings;
-    float base_price;
 	float orderPrice;
 	User* user;
 
@@ -37,8 +39,15 @@ private:
 public:
 	//CONSTRUCTORS & DESTRUCTORS
 	Order();
-	Order(float baseprice);
-	Order(User* u, float price);
+	Order(Beverage* b);
+	Order(User* u, Beverage* b);
 	~Order();
 
+    //GETTERS & SETTERS
+    void addCupSize(cupSize c);
+    void addTopping(topping t);
+    void calculatePrice();
+
+    //PRINTING
+    void showOrder();
 };
