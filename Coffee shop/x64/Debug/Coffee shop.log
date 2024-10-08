@@ -1,3 +1,5 @@
-﻿  Order.cpp
-C:\Users\Novak\Desktop\OOP project\OOP projekat\Coffee shop\Coffee shop\Order.cpp(45,75): warning C4244: '=': conversion from 'double' to 'float', possible loss of data
+﻿  client.cpp
+  server.cpp
+  Generating Code...
+  LINK : C:\Users\Novak\Desktop\OOP project\OOP projekat\Coffee shop\x64\Debug\Coffee shop.exe not found or not built by the last incremental link; performing full link
   Coffee shop.vcxproj -> C:\Users\Novak\Desktop\OOP project\OOP projekat\Coffee shop\x64\Debug\Coffee shop.exe

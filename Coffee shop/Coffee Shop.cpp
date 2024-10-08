@@ -462,10 +462,29 @@ void Coffee_Shop::addOrder(Order *o)
 }
 #pragma endregion
 
+#pragma region "USER MANIPULATION"
+void Coffee_Shop::addNewUser(string name, int balance)
+{
+	int cardNumber;
+	if (this->userNumber == 0)
+	{
+		cardNumber = 1000000000;
+	}
+	else
+	{
+		cardNumber = this->users[this->userNumber - 1] + 1;
+	}
+	int pin = rand() % 10000;
+	this->userNumber++;
+	this->users.push_back(cardNumber);
+	this->writeUserToFile(cardNumber, pin, name, balance, 10);
+}
+#pragma endregion
+
 #pragma region FILE MANIPULATION
 void Coffee_Shop::writeMenuToFile()
 {
-	this->menuFile.open(FILENAME, ios::out);
+	this->menuFile.open(FILE_MENU, ios::out);
 	this->menuFile << this->menuSize << endl;
 	for (int i = 0; i < this->menuSize; i++)
 	{
@@ -485,7 +504,7 @@ void Coffee_Shop::writeMenuToFile()
 void Coffee_Shop::readMenuFromFile()
 {
 	int flg;
-	this->menuFile.open(FILENAME, ios::in);
+	this->menuFile.open(FILE_MENU, ios::in);
 	this->menuFile >> this->menuSize;
 	this->menu = new Beverage * [this->menuSize];
 	for (int i = 0; i < this->menuSize; i++)
@@ -505,6 +524,18 @@ void Coffee_Shop::readMenuFromFile()
 	}
 	this->menuFile.close();
 }
+
+void Coffee_Shop::writeUserToFile(int card, int pin, string name, int balance, int points)
+{
+	this->userFile.open(FILE_USERS, ios::out | ios::app);
+	
+	this->userFile << card << " " << pin << " " << name << " " << balance << " " << points << endl;
+
+	this->userFile.close();
+}
+
+void readCardsFromFile();
+void readUserFromFile();
 #pragma endregion
 
 #pragma region SOKCKET COMMUNICATION
@@ -556,49 +587,25 @@ DWORD WINAPI Coffee_Shop::acceptClients(LPVOID p)
 		if (client >= 0)
 		{
 			char buffer[20];
-			string message;
-			strcpy(buffer, instance->name.c_str());
-			send(client, buffer, 20, 0);
-			message = to_string(instance->menuSize);
-			strcpy(buffer, message.c_str());
-			send(client, buffer, 20, 0);
-			for (int i = 0; i < instance->menuSize; i++)
-			{
-				if (typeid(*instance->menu[i]) == typeid(Coffee))
-				{
-					strcpy(buffer, "Coffee");
-				}
-				else
-				{
-					strcpy(buffer, "Tea");
-				}
-				send(client, buffer, 20, 0);
-				strcpy(buffer, instance->menu[i]->getName().c_str());
-				send(client, buffer, 20, 0);
-				message = to_string(instance->menu[i]->getPrice());
-				strcpy(buffer, message.c_str());
-				send(client, buffer, 20, 0);
-				strcpy(buffer, instance->menu[i]->getTypeString().c_str());
-				send(client, buffer, 20, 0);
-			}
 			int recvSize = recv(client, buffer, 20, 0);
+			if (strcmp(buffer, CODE_REGISTER) == 0)
+			{
+				recvSize = recv(client, buffer, 20, 0);
+				string name = buffer;
+				recvSize = recv(client, buffer, 20, 0);
+				int balance = atoi(buffer);
+				instance->addNewUser(name, balance);
+
+				//send
+			}
+
+			instance->sendMenu(client);
+
+			
+			recvSize = recv(client, buffer, 20, 0);
 			if (strcmp(buffer, CODE_ORDER)==0)
 			{
-				recvSize = recv(client, buffer, 20, 0);
-				int numb = atoi(buffer);
-				Order* o = new Order(instance->menu[numb]);
-				recvSize = recv(client, buffer, 20, 0);
-				numb = atoi(buffer);
-				o->addCupSize((cupSize)numb);
-				recvSize = recv(client, buffer, 20, 0);
-				numb = atoi(buffer);
-				while (numb > 0)
-				{
-					o->addTopping((topping)(numb % 10));
-					numb = numb / 10;
-				}
-				instance->addOrder(o);
-				o->calculatePrice();
+				instance->receiveOrder(client);
 			}
 			//closesocket(client);
 		}
@@ -608,5 +615,55 @@ DWORD WINAPI Coffee_Shop::acceptClients(LPVOID p)
 		}
 	}
 	return 0;
+}
+
+void Coffee_Shop::sendMenu(int client)
+{
+	char buffer[20];
+	string message;
+	strcpy(buffer, this->name.c_str());
+	send(client, buffer, 20, 0);
+	message = to_string(this->menuSize);
+	strcpy(buffer, message.c_str());
+	send(client, buffer, 20, 0);
+	for (int i = 0; i < this->menuSize; i++)
+	{
+		if (typeid(*this->menu[i]) == typeid(Coffee))
+		{
+			strcpy(buffer, "Coffee");
+		}
+		else
+		{
+			strcpy(buffer, "Tea");
+		}
+		send(client, buffer, 20, 0);
+		strcpy(buffer, this->menu[i]->getName().c_str());
+		send(client, buffer, 20, 0);
+		message = to_string(this->menu[i]->getPrice());
+		strcpy(buffer, message.c_str());
+		send(client, buffer, 20, 0);
+		strcpy(buffer, this->menu[i]->getTypeString().c_str());
+		send(client, buffer, 20, 0);
+	}
+}
+
+void Coffee_Shop::receiveOrder(int client)
+{
+	char buffer[20];
+	int recvSize = recv(client, buffer, 20, 0);
+	int numb = atoi(buffer);
+	Order* o = new Order(this->menu[numb]);
+	recvSize = recv(client, buffer, 20, 0);
+	numb = atoi(buffer);
+	o->addCupSize((cupSize)numb);
+	recvSize = recv(client, buffer, 20, 0);
+	numb = atoi(buffer);
+	while (numb > 0)
+	{
+		o->addTopping((topping)(numb % 10));
+		numb = numb / 10;
+	}
+	this->addOrder(o);
+	o->calculatePrice();
 }
 #pragma endregion

@@ -47,6 +47,8 @@ public:
     void addCupSize(cupSize c);
     void addTopping(topping t);
     void calculatePrice();
+    string getCupSizeString();
+    string getAllToppingString();
 
     //PRINTING
     void showOrder();

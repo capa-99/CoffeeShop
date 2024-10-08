@@ -16,28 +16,29 @@ using namespace std;
 class User
 {
 private:
+	int membershipCard;
+	int PIN;
 	string name;
 	float balance;
+	int membershipPoints;
 
 public:
 	//CONSTRUCTORS & DESTRUCTORS
 	User();
-	User(string name, float balance);
+	User(string name, int balance);
+	User(int card, int PIN);
+	User(int card, int PIN, string name, float balance, int points);
 	~User();
 
 	//SETTERS & GETTERS
 	string getName();
 	float getBalance();
-	
-	//BALANCE
-	void addToBalance();
+	void addToBalance(int money);
+	void changeName(string name);
+	void addPoints(int points);
+	void substractPoints(int points);
+	void substractFromBalance(int money);
 
 	//PRINTING
 	void showInfo();
-
-	void mainMenu();
-
-	//SOCKET COMMUNICATION
-	void connectToCoffeeShop();
-	void order(int fd, int menuSize);
 };
