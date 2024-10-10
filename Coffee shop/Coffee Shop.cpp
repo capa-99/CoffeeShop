@@ -4,6 +4,7 @@
 #include <windows.h>
 #include <iostream>
 #include <typeinfo>
+#include <sstream>
 
 
 #pragma region CONSTRUCTORS & DESTRUCTORS
@@ -462,8 +463,8 @@ void Coffee_Shop::addOrder(Order *o)
 }
 #pragma endregion
 
-#pragma region "USER MANIPULATION"
-void Coffee_Shop::addNewUser(string name, int balance)
+#pragma region USER MANIPULATION
+int Coffee_Shop::addNewUser(string name, int balance)
 {
 	int cardNumber;
 	if (this->userNumber == 0)
@@ -474,10 +475,12 @@ void Coffee_Shop::addNewUser(string name, int balance)
 	{
 		cardNumber = this->users[this->userNumber - 1] + 1;
 	}
+	srand(static_cast<unsigned int>(time(0)));
 	int pin = rand() % 10000;
 	this->userNumber++;
 	this->users.push_back(cardNumber);
 	this->writeUserToFile(cardNumber, pin, name, balance, 10);
+	return pin;
 }
 #pragma endregion
 
@@ -528,14 +531,42 @@ void Coffee_Shop::readMenuFromFile()
 void Coffee_Shop::writeUserToFile(int card, int pin, string name, int balance, int points)
 {
 	this->userFile.open(FILE_USERS, ios::out | ios::app);
-	
-	this->userFile << card << " " << pin << " " << name << " " << balance << " " << points << endl;
+	if (this->userNumber != 0)
+	{
+		this->userFile << endl;
+	}
+	this->userFile << card << " " << pin << " " << name << " " << balance << " " << points;
 
 	this->userFile.close();
 }
 
-void readCardsFromFile();
-void readUserFromFile();
+void Coffee_Shop::readCardsFromFile()
+{
+	int i = 0;
+	this->userFile.open(FILE_USERS, ios::in);
+	while(!this->userFile.eof())
+	{
+		this->users.push_back(0);
+		this->userFile >> this->users[i];
+		string data;
+		getline(this->userFile, data);
+		i++;
+	}
+	this->userNumber = i;
+	this->userFile.close();
+}
+
+string Coffee_Shop::readUserFromFile(int card)
+{
+	string data;
+	this->userFile.open(FILE_USERS, ios::in);
+	for(int i = 0; i <= card; i++)
+	{
+		getline(this->userFile, data);
+	}
+	this->userFile.close();
+	return data;
+}
 #pragma endregion
 
 #pragma region SOKCKET COMMUNICATION
@@ -590,24 +621,29 @@ DWORD WINAPI Coffee_Shop::acceptClients(LPVOID p)
 			int recvSize = recv(client, buffer, 20, 0);
 			if (strcmp(buffer, CODE_REGISTER) == 0)
 			{
+				instance->userRegister(client);
+				instance->sendMenu(client);
 				recvSize = recv(client, buffer, 20, 0);
-				string name = buffer;
-				recvSize = recv(client, buffer, 20, 0);
-				int balance = atoi(buffer);
-				instance->addNewUser(name, balance);
-
-				//send
+				if (strcmp(buffer, CODE_ORDER) == 0)
+				{
+					instance->receiveOrder(client);
+				}
 			}
-
-			instance->sendMenu(client);
-
-			
-			recvSize = recv(client, buffer, 20, 0);
-			if (strcmp(buffer, CODE_ORDER)==0)
+			else if (strcmp(buffer, CODE_LOGIN) == 0)
 			{
-				instance->receiveOrder(client);
+				instance->userLogin(client);
+				instance->sendMenu(client);
+				recvSize = recv(client, buffer, 20, 0);
+				if (strcmp(buffer, CODE_ORDER) == 0)
+				{
+					instance->receiveOrder(client);
+				}
 			}
-			//closesocket(client);
+			else
+			{
+
+			}
+			closesocket(client);
 		}
 		else
 		{
@@ -615,6 +651,45 @@ DWORD WINAPI Coffee_Shop::acceptClients(LPVOID p)
 		}
 	}
 	return 0;
+}
+
+void Coffee_Shop::userRegister(int client)
+{
+	char buffer[20];
+	int recvSize = recv(client, buffer, 20, 0);
+	string name = buffer;
+	recvSize = recv(client, buffer, 20, 0);
+	int balance = atoi(buffer);
+	balance = this->addNewUser(name, balance);
+
+	strcpy(buffer, to_string(this->users[this->userNumber - 1]).c_str());
+	send(client, buffer, 20, 0);
+	strcpy(buffer, to_string(balance).c_str());
+	send(client, buffer, 20, 0);
+}
+
+void Coffee_Shop::userLogin(int client)
+{
+	char buffer[20];
+	int recvSize = recv(client, buffer, 20, 0);
+	int  card = atoi(buffer);
+	int index = distance(this->users.begin(), find(this->users.begin(), this->users.end(), card));
+	recvSize = recv(client, buffer, 20, 0);
+	string pin = buffer;
+	string data = this->readUserFromFile(index);
+	string PIN;
+	istringstream ss(data);
+	getline(ss, PIN, ' ');
+	getline(ss, PIN, ' ');
+	if (PIN == pin)
+	{
+		strcpy(buffer, CODE_SUCCESS);
+	}
+	else
+	{
+		strcpy(buffer, CODE_ERROR);
+	}
+	send(client, buffer, 20, 0);
 }
 
 void Coffee_Shop::sendMenu(int client)

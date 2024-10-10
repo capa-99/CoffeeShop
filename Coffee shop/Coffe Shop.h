@@ -18,6 +18,8 @@ using namespace std;
 #define CODE_EXIT "2000"
 #define CODE_REGISTER "3000"
 #define CODE_LOGIN "3001"
+#define CODE_SUCCESS "4000"
+#define CODE_ERROR "4001"
 
 class Coffee_Shop
 {
@@ -58,18 +60,20 @@ public:
 	void addOrder(Order* o);
 
 	//USER MANIPULATION
-	void addNewUser(string name, int balance);
+	int addNewUser(string name, int balance);
 
 	//FILE MANIPULATION
 	void writeMenuToFile();
 	void readMenuFromFile();
 	void writeUserToFile(int card, int pin, string name, int balance, int points);
 	void readCardsFromFile();
-	void readUserFromFile();
+	string readUserFromFile(int card);
 
 	//SOCKET COMMUNICATION
 	void configureServer();
 	static DWORD WINAPI acceptClients(LPVOID p);
+	void userRegister(int client);
+	void userLogin(int client);
 	void sendMenu(int client);
 	void receiveOrder(int client);
 };
