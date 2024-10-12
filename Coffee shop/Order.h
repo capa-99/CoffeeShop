@@ -33,14 +33,13 @@ private:
     cupSize cup;
     vector<topping> toppings;
 	float orderPrice;
-	User* user;
+	int user;
 
 
 public:
 	//CONSTRUCTORS & DESTRUCTORS
 	Order();
-	Order(Beverage* b);
-	Order(User* u, Beverage* b);
+	Order(Beverage* b, int user);
 	~Order();
 
     //GETTERS & SETTERS

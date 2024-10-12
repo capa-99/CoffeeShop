@@ -58,6 +58,8 @@ public:
 
 	//ORDER MANIPULATION
 	void addOrder(Order* o);
+	void deleteOrder(int order);
+	void completeOrder();
 
 	//USER MANIPULATION
 	int addNewUser(string name, int balance);
@@ -72,8 +74,8 @@ public:
 	//SOCKET COMMUNICATION
 	void configureServer();
 	static DWORD WINAPI acceptClients(LPVOID p);
-	void userRegister(int client);
-	void userLogin(int client);
+	int userRegister(int client);
+	int userLogin(int client);
 	void sendMenu(int client);
-	void receiveOrder(int client);
+	void receiveOrder(int client, int card);
 };

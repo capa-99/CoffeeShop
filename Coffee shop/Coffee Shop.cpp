@@ -95,11 +95,12 @@ void Coffee_Shop::mainPageSelect()
 		cout << "3. Remove drink from the menu" << endl;
 		cout << "4. Show the menu" << endl;
 		cout << "5. Show pending orders" << endl;
+		cout << "6. Complete an order" << endl;
 		cout << "0. Exit" << endl;
 		try
 		{
 			cin >> choice;
-			while(cin.fail() || choice > 5)
+			while(cin.fail() || choice > 6)
 			{
 				HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
 				SetConsoleTextAttribute(hConsole, 4);
@@ -157,6 +158,13 @@ void Coffee_Shop::mainPageSelect()
 			this->welcomePage();
 			this->showOrders();
 		}break;
+		case 6:
+		{
+			system("cls");
+			this->welcomePage();
+			this->showOrders();
+			this->completeOrder();
+		}
 		case 0:
 		{
 			this->writeMenuToFile();
@@ -461,6 +469,46 @@ void Coffee_Shop::addOrder(Order *o)
 	this->pendingOrders[this->orderNumber - 1] = o;
 	delete[] tmp;
 }
+
+void Coffee_Shop::deleteOrder(int order)
+{
+	this->orderNumber--;
+	delete this->pendingOrders[order];
+	this->pendingOrders[order] = this->pendingOrders[this->orderNumber];
+}
+
+void Coffee_Shop::completeOrder()
+{
+	int order;
+	cout << "Choose the order you want to complete: ";
+	try
+	{
+		cin >> order;
+		while (cin.fail() || order > this->orderNumber)
+		{
+			HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
+			SetConsoleTextAttribute(hConsole, 4);
+			if (cin.fail())
+			{
+				cin.clear();
+				char c;
+				while (cin.get(c) && c != '\n') {}
+				cerr << "Please enter a number" << endl;
+			}
+			else
+			{
+				cerr << "Please enter a valid number" << endl;
+			}
+			SetConsoleTextAttribute(hConsole, 14);
+			cin >> order;
+		}
+	}
+	catch (runtime_error& e)
+	{
+		cerr << e.what() << endl;
+	}
+	this->deleteOrder(order - 1);
+}
 #pragma endregion
 
 #pragma region USER MANIPULATION
@@ -617,26 +665,27 @@ DWORD WINAPI Coffee_Shop::acceptClients(LPVOID p)
 		int client = accept(instance->serverFD, (struct sockaddr*)&clientAddr, &clientAddrSize);
 		if (client >= 0)
 		{
+			int user;
 			char buffer[20];
 			int recvSize = recv(client, buffer, 20, 0);
 			if (strcmp(buffer, CODE_REGISTER) == 0)
 			{
-				instance->userRegister(client);
+				user = instance->userRegister(client);
 				instance->sendMenu(client);
 				recvSize = recv(client, buffer, 20, 0);
 				if (strcmp(buffer, CODE_ORDER) == 0)
 				{
-					instance->receiveOrder(client);
+					instance->receiveOrder(client, user);
 				}
 			}
 			else if (strcmp(buffer, CODE_LOGIN) == 0)
 			{
-				instance->userLogin(client);
+				user = instance->userLogin(client);
 				instance->sendMenu(client);
 				recvSize = recv(client, buffer, 20, 0);
 				if (strcmp(buffer, CODE_ORDER) == 0)
 				{
-					instance->receiveOrder(client);
+					instance->receiveOrder(client, user);
 				}
 			}
 			else
@@ -653,7 +702,7 @@ DWORD WINAPI Coffee_Shop::acceptClients(LPVOID p)
 	return 0;
 }
 
-void Coffee_Shop::userRegister(int client)
+int Coffee_Shop::userRegister(int client)
 {
 	char buffer[20];
 	int recvSize = recv(client, buffer, 20, 0);
@@ -666,9 +715,11 @@ void Coffee_Shop::userRegister(int client)
 	send(client, buffer, 20, 0);
 	strcpy(buffer, to_string(balance).c_str());
 	send(client, buffer, 20, 0);
+	
+	return this->users[this->userNumber - 1];
 }
 
-void Coffee_Shop::userLogin(int client)
+int Coffee_Shop::userLogin(int client)
 {
 	char buffer[20];
 	int recvSize = recv(client, buffer, 20, 0);
@@ -690,6 +741,8 @@ void Coffee_Shop::userLogin(int client)
 		strcpy(buffer, CODE_ERROR);
 	}
 	send(client, buffer, 20, 0);
+
+	return this->users[index];
 }
 
 void Coffee_Shop::sendMenu(int client)
@@ -722,12 +775,12 @@ void Coffee_Shop::sendMenu(int client)
 	}
 }
 
-void Coffee_Shop::receiveOrder(int client)
+void Coffee_Shop::receiveOrder(int client, int card)
 {
 	char buffer[20];
 	int recvSize = recv(client, buffer, 20, 0);
 	int numb = atoi(buffer);
-	Order* o = new Order(this->menu[numb]);
+	Order* o = new Order(this->menu[numb], card);
 	recvSize = recv(client, buffer, 20, 0);
 	numb = atoi(buffer);
 	o->addCupSize((cupSize)numb);

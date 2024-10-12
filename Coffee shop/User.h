@@ -12,6 +12,10 @@ using namespace std;
 
 #define CODE_ORDER "1000"
 #define CODE_EXIT "2000"
+#define CODE_REGISTER "3000"
+#define CODE_LOGIN "3001"
+#define CODE_SUCCESS "4000"
+#define CODE_ERROR "4001"
 
 class User
 {
@@ -21,6 +25,7 @@ private:
 	string name;
 	float balance;
 	int membershipPoints;
+	int server;
 
 public:
 	//CONSTRUCTORS & DESTRUCTORS
@@ -41,4 +46,12 @@ public:
 
 	//PRINTING
 	void showInfo();
+
+	//SOCKET MANIPULATION
+	void order( int menusize);
+	void receiveMenu();
+	void connectToCoffeeShop();
+	void account();
+	void signin();
+	void login();
 };

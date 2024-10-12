@@ -3,22 +3,15 @@
 #pragma region CONSTRUCTORS & DESTRUCTORS
 Order::Order()
 {
-	this->user = nullptr;
 	this->orderPrice = 0;
+	this->user = 0;
 	this->cup = smaller;
 	this->drink = nullptr;
 }
 
-Order::Order(Beverage* b)
+Order::Order(Beverage* b, int user)
 {
-	this->user = nullptr;
-	this->drink = b;
-	this->cup = smaller;
-}
-
-Order::Order(User* u, Beverage* b)
-{
-	this->user = u;
+	this->user = user;
 	this->drink = b;
 	this->cup = smaller;
 }
@@ -113,6 +106,6 @@ string Order::getAllToppingString()
 #pragma region PRINTNG
 void Order::showOrder()
 {
-	cout << left << setw(20) << this->drink->getName() << setw(12) << this->getCupSizeString() << setw(50) << this->getAllToppingString() << setw(8) << this->orderPrice << setw(10) << "this->user->getName()" << endl;
+	cout << left << setw(20) << this->drink->getName() << setw(12) << this->getCupSizeString() << setw(50) << this->getAllToppingString() << setw(8) << this->orderPrice << setw(10) << this->user << endl;
 }
 #pragma endregion
