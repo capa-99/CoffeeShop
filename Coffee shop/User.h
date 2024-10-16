@@ -46,6 +46,7 @@ public:
 
 	//PRINTING
 	void showInfo();
+	void eraseLines(int lines);
 
 	//SOCKET MANIPULATION
 	void order( int menusize);

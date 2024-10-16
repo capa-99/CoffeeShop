@@ -164,7 +164,7 @@ void Coffee_Shop::mainPageSelect()
 			this->welcomePage();
 			this->showOrders();
 			this->completeOrder();
-		}
+		}break;
 		case 0:
 		{
 			this->writeMenuToFile();
@@ -715,6 +715,8 @@ int Coffee_Shop::userRegister(int client)
 	send(client, buffer, 20, 0);
 	strcpy(buffer, to_string(balance).c_str());
 	send(client, buffer, 20, 0);
+	strcpy(buffer, to_string(10).c_str());
+	send(client, buffer, 20, 0);
 	
 	return this->users[this->userNumber - 1];
 }
@@ -740,6 +742,16 @@ int Coffee_Shop::userLogin(int client)
 	{
 		strcpy(buffer, CODE_ERROR);
 	}
+	send(client, buffer, 20, 0);
+	
+	getline(ss, PIN, ' ');
+	strcpy(buffer, PIN.c_str());
+	send(client, buffer, 20, 0);
+	getline(ss, PIN, ' ');
+	strcpy(buffer, PIN.c_str());
+	send(client, buffer, 20, 0);
+	getline(ss, PIN, ' ');
+	strcpy(buffer, PIN.c_str());
 	send(client, buffer, 20, 0);
 
 	return this->users[index];
@@ -791,7 +803,10 @@ void Coffee_Shop::receiveOrder(int client, int card)
 		o->addTopping((topping)(numb % 10));
 		numb = numb / 10;
 	}
-	this->addOrder(o);
-	o->calculatePrice();
+	if (recvSize > 0)
+	{
+		this->addOrder(o);
+		o->calculatePrice();
+	}
 }
 #pragma endregion

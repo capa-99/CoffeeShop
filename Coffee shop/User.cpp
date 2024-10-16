@@ -74,7 +74,42 @@ void User::substractFromBalance(int money)
 #pragma region PRINTING
 void User::showInfo()
 {
-	cout << left << setw(15) << this->membershipCard << setw(5) << this->PIN << setw(20) << this->name << setw(5) << this->balance << setw(4) << this->membershipPoints << endl;
+	cout << "Card number: " << this->membershipCard << endl;
+	string zeroes;
+	if (this->PIN < 1000)
+	{
+		zeroes = "0";
+		if (this->PIN < 100)
+		{
+			zeroes = zeroes + "0";
+			if (this->PIN < 10)
+			{
+				zeroes = zeroes + "0";
+			}
+		}
+	}
+	cout << "PIN: " << zeroes << this->PIN << endl;
+	cout << "Name: " << this->name << endl;
+	cout << "Balance: " << this->balance << endl;
+	cout << "Membership points: " << this->membershipPoints << endl;
+}
+
+void User::eraseLines(int lines)
+{
+	HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
+	CONSOLE_SCREEN_BUFFER_INFO csbi;
+	COORD pos = { static_cast<SHORT>(0), static_cast<SHORT>(0) };
+	if (GetConsoleScreenBufferInfo(hConsole, &csbi)) {
+		pos = csbi.dwCursorPosition;
+	}
+	for (int i = 0; i < lines; i++)
+	{
+		pos.Y--;
+		SetConsoleCursorPosition(hConsole, pos);
+		cout << "                                                                             ";
+	}
+	pos.X = 0;
+	SetConsoleCursorPosition(hConsole, pos);
 }
 #pragma endregion
 
@@ -210,6 +245,9 @@ void User::signin()
 		}
 	}
 	cout << "Your PIN is " << zeroes << card << endl;
+	recvSize = recv(this->server, buffer, 20, 0);
+	card = atoi(buffer);
+	this->membershipPoints = card;
 	receiveMenu();
 }
 
@@ -238,6 +276,15 @@ void User::login()
 	if (strcmp(buffer, CODE_SUCCESS) == 0)
 	{
 		cout << "You have succesfully logged in" << endl;
+		recvSize = recv(this->server, buffer, 20, 0);
+		message = buffer;
+		this->name = message;
+		recvSize = recv(this->server, buffer, 20, 0);
+		card = atoi(buffer);
+		this->balance = card;
+		recvSize = recv(this->server, buffer, 20, 0);
+		card = atoi(buffer);
+		this->membershipPoints = card;
 		receiveMenu();
 	}
 	else
@@ -277,11 +324,13 @@ void User::receiveMenu()
 		int choice;
 		cout << "Select an action: " << endl;
 		cout << "1. Order" << endl;
+		cout << "2. See your info" << endl;
+		cout << "3. Logout" << endl;
 		cout << "0. Exit" << endl;
 		try
 		{
 			cin >> choice;
-			while (cin.fail() || choice > 1)
+			while (cin.fail() || choice > 3)
 			{
 				HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
 				SetConsoleTextAttribute(hConsole, 4);
@@ -309,8 +358,15 @@ void User::receiveMenu()
 		{
 		case 1:
 		{
-			system("cls");
 			order(menuSize);
+		}break;
+		case 2:
+		{
+			this->showInfo();
+		}break;
+		case 3:
+		{
+
 		}break;
 		case 0:
 		{
@@ -331,6 +387,7 @@ void User::order(int menuSize)
 	char buffer[20];
 	strcpy(buffer, CODE_ORDER);
 	send(this->server, buffer, 20, 0);
+	this->eraseLines(6);
 	int drink;
 	cout << "Select the drink you want to order: ";
 	try
@@ -363,6 +420,7 @@ void User::order(int menuSize)
 	message = to_string(drink - 1);
 	strcpy(buffer, message.c_str());
 	send(this->server, buffer, 20, 0);
+	this->eraseLines(1);
 	int cup;
 	cout << "Choose the cup size of the drink: " << endl << "1. small, 2. medium, 3. large" << endl;
 	try
@@ -394,6 +452,7 @@ void User::order(int menuSize)
 	message = to_string(cup - 1);
 	strcpy(buffer, message.c_str());
 	send(this->server, buffer, 20, 0);
+	this->eraseLines(3);
 	int toppNum = 0;
 	int toppings = 0;
 	int topp;
@@ -450,6 +509,7 @@ void User::order(int menuSize)
 			toppings = toppings * 10 + topp - 1;
 		}
 		}
+		this->eraseLines(12);
 	}
 	message = to_string(toppings);
 	strcpy(buffer, message.c_str());
