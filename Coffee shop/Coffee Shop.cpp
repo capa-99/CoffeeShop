@@ -507,6 +507,11 @@ void Coffee_Shop::completeOrder()
 	{
 		cerr << e.what() << endl;
 	}
+
+	char buffer[20];
+	strcpy(buffer, CODE_COMPLETED);
+	send(this->pendingOrders[order-1]->getAddress(), buffer, 20, 0);
+
 	this->deleteOrder(order - 1);
 }
 #pragma endregion
@@ -673,9 +678,13 @@ DWORD WINAPI Coffee_Shop::acceptClients(LPVOID p)
 				user = instance->userRegister(client);
 				instance->sendMenu(client);
 				recvSize = recv(client, buffer, 20, 0);
-				if (strcmp(buffer, CODE_ORDER) == 0)
+				while (strcmp(buffer, CODE_EXIT) != 0)
 				{
-					instance->receiveOrder(client, user);
+					if (strcmp(buffer, CODE_ORDER) == 0)
+					{
+						instance->receiveOrder(client, user);
+					}
+					recvSize = recv(client, buffer, 20, 0);
 				}
 			}
 			else if (strcmp(buffer, CODE_LOGIN) == 0)
@@ -683,9 +692,13 @@ DWORD WINAPI Coffee_Shop::acceptClients(LPVOID p)
 				user = instance->userLogin(client);
 				instance->sendMenu(client);
 				recvSize = recv(client, buffer, 20, 0);
-				if (strcmp(buffer, CODE_ORDER) == 0)
+				while (strcmp(buffer, CODE_EXIT) != 0)
 				{
-					instance->receiveOrder(client, user);
+					if (strcmp(buffer, CODE_ORDER) == 0)
+					{
+						instance->receiveOrder(client, user);
+					}
+					recvSize = recv(client, buffer, 20, 0);
 				}
 			}
 			else
@@ -807,6 +820,9 @@ void Coffee_Shop::receiveOrder(int client, int card)
 	{
 		this->addOrder(o);
 		o->calculatePrice();
+		o->setAddress(client);
+		strcpy(buffer, to_string(o->getPrice()).c_str());
+		send(client, buffer, 20, 0);
 	}
 }
 #pragma endregion

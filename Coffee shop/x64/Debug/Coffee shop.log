@@ -1,7 +1,7 @@
 ﻿  Coffee Shop.cpp
-C:\Users\Novak\Desktop\OOP project\OOP projekat\Coffee shop\Coffee shop\Coffee Shop.cpp(626,25): warning C4244: '=': conversion from 'SOCKET' to 'int', possible loss of data
-C:\Users\Novak\Desktop\OOP project\OOP projekat\Coffee shop\Coffee shop\Coffee Shop.cpp(665,14): warning C4244: 'initializing': conversion from 'SOCKET' to 'int', possible loss of data
-C:\Users\Novak\Desktop\OOP project\OOP projekat\Coffee shop\Coffee shop\Coffee Shop.cpp(729,12): warning C4244: 'initializing': conversion from '__int64' to 'int', possible loss of data
+C:\Users\Novak\Desktop\OOP project\OOP projekat\Coffee shop\Coffee shop\Coffee Shop.cpp(631,25): warning C4244: '=': conversion from 'SOCKET' to 'int', possible loss of data
+C:\Users\Novak\Desktop\OOP project\OOP projekat\Coffee shop\Coffee shop\Coffee Shop.cpp(670,14): warning C4244: 'initializing': conversion from 'SOCKET' to 'int', possible loss of data
+C:\Users\Novak\Desktop\OOP project\OOP projekat\Coffee shop\Coffee shop\Coffee Shop.cpp(742,12): warning C4244: 'initializing': conversion from '__int64' to 'int', possible loss of data
   client.cpp
   server.cpp
   Generating Code...

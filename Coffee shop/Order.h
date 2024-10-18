@@ -34,6 +34,7 @@ private:
     vector<topping> toppings;
 	float orderPrice;
 	int user;
+    int userAddress;
 
 
 public:
@@ -48,6 +49,9 @@ public:
     void calculatePrice();
     string getCupSizeString();
     string getAllToppingString();
+    int getPrice();
+    void setAddress(int addr);
+    int getAddress();
 
     //PRINTING
     void showOrder();

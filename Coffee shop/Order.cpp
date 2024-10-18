@@ -101,6 +101,21 @@ string Order::getAllToppingString()
 	}
 	return ret;
 }
+
+int Order::getPrice()
+{
+	return this->orderPrice;
+}
+
+void Order::setAddress(int addr)
+{
+	this->userAddress = addr;
+}
+
+int Order::getAddress()
+{
+	return this->userAddress;
+}
 #pragma endregion
 
 #pragma region PRINTNG

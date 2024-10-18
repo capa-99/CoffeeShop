@@ -11,6 +11,7 @@ using namespace std;
 #define BUFFER_SIZE 20
 
 #define CODE_ORDER "1000"
+#define CODE_COMPLETED "1001"
 #define CODE_EXIT "2000"
 #define CODE_REGISTER "3000"
 #define CODE_LOGIN "3001"

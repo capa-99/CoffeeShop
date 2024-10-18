@@ -514,5 +514,14 @@ void User::order(int menuSize)
 	message = to_string(toppings);
 	strcpy(buffer, message.c_str());
 	send(this->server, buffer, 20, 0);
+
+	int recvSize = recv(this->server, buffer, 20, 0);
+	cout << "Your order is being processed. The price of your order is " << buffer << endl;
+	this->substractFromBalance(atoi(buffer));
+	recvSize = recv(this->server, buffer, 20, 0);
+	if (strcmp(buffer, CODE_COMPLETED) == 0)
+	{
+		cout << "Your order is ready!" << endl;
+	}
 }
 #pragma endregion
