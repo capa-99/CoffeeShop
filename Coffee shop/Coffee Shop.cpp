@@ -396,6 +396,10 @@ void Coffee_Shop::editDrinkPrice()
 	{
 		cerr << e.what() << endl;
 	}
+	if (drink == 0)
+	{
+		return;
+	}
 	cout << "Enter the new price: ";
 	try
 	{
@@ -448,6 +452,10 @@ void Coffee_Shop::deleteDrink()
 	catch (runtime_error& e)
 	{
 		cerr << e.what() << endl;
+	}
+	if (drink == 0)
+	{
+		return;
 	}
 	this->menuSize--;
 	delete this->menu[drink - 1];
@@ -507,7 +515,10 @@ void Coffee_Shop::completeOrder()
 	{
 		cerr << e.what() << endl;
 	}
-
+	if (order == 0)
+	{
+		return;
+	}
 	char buffer[20];
 	strcpy(buffer, CODE_COMPLETED);
 	send(this->pendingOrders[order-1]->getAddress(), buffer, 20, 0);
@@ -620,6 +631,34 @@ string Coffee_Shop::readUserFromFile(int card)
 	this->userFile.close();
 	return data;
 }
+
+void Coffee_Shop::updateUserToFile(int card, int balance, int points)
+{
+	int index = distance(this->users.begin(), find(this->users.begin(), this->users.end(), card));
+	fstream temp;
+	temp.open(FILE_USERS, ios::in | ios::out);
+	string data;
+	this->userFile.open(FILE_USERS, ios::in | ios::out);
+	for (int i = 0; i < index; i++)
+	{
+		getline(this->userFile, data);
+		temp << data << endl;
+	}
+	getline(this->userFile, data);
+	string line;
+	istringstream ss(data);
+	getline(ss, data, ' ');
+	line = line + data + " ";
+	getline(ss, data, ' ');
+	line = line + data + " ";
+	getline(ss, data, ' ');
+	line = line + data + " ";
+	line = line + to_string(balance) + " " + to_string(points);
+	temp << line << endl;
+	temp << this->userFile.rdbuf();
+	this->userFile.close();
+	temp.close();
+}
 #pragma endregion
 
 #pragma region SOKCKET COMMUNICATION
@@ -678,7 +717,7 @@ DWORD WINAPI Coffee_Shop::acceptClients(LPVOID p)
 				user = instance->userRegister(client);
 				instance->sendMenu(client);
 				recvSize = recv(client, buffer, 20, 0);
-				while (strcmp(buffer, CODE_EXIT) != 0)
+				while (strcmp(buffer, CODE_LOGOUT) != 0)
 				{
 					if (strcmp(buffer, CODE_ORDER) == 0)
 					{
@@ -686,13 +725,14 @@ DWORD WINAPI Coffee_Shop::acceptClients(LPVOID p)
 					}
 					recvSize = recv(client, buffer, 20, 0);
 				}
+				instance->userLogout(client, user);
 			}
 			else if (strcmp(buffer, CODE_LOGIN) == 0)
 			{
 				user = instance->userLogin(client);
 				instance->sendMenu(client);
 				recvSize = recv(client, buffer, 20, 0);
-				while (strcmp(buffer, CODE_EXIT) != 0)
+				while (strcmp(buffer, CODE_LOGOUT) != 0)
 				{
 					if (strcmp(buffer, CODE_ORDER) == 0)
 					{
@@ -700,6 +740,7 @@ DWORD WINAPI Coffee_Shop::acceptClients(LPVOID p)
 					}
 					recvSize = recv(client, buffer, 20, 0);
 				}
+				instance->userLogout(client, user);
 			}
 			else
 			{
@@ -768,6 +809,16 @@ int Coffee_Shop::userLogin(int client)
 	send(client, buffer, 20, 0);
 
 	return this->users[index];
+}
+
+void Coffee_Shop::userLogout(int client, int card)
+{
+	char buffer[20];
+	int recvSize = recv(client, buffer, 20, 0);
+	int balance = atoi(buffer);
+	recvSize = recv(client, buffer, 20, 0);
+	int points = atoi(buffer);
+	this->updateUserToFile(card, balance, points);
 }
 
 void Coffee_Shop::sendMenu(int client)

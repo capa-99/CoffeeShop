@@ -19,6 +19,7 @@ using namespace std;
 #define CODE_EXIT "2000"
 #define CODE_REGISTER "3000"
 #define CODE_LOGIN "3001"
+#define CODE_LOGOUT "3002"
 #define CODE_SUCCESS "4000"
 #define CODE_ERROR "4001"
 
@@ -71,12 +72,14 @@ public:
 	void writeUserToFile(int card, int pin, string name, int balance, int points);
 	void readCardsFromFile();
 	string readUserFromFile(int card);
+	void updateUserToFile(int card, int balance, int points);
 
 	//SOCKET COMMUNICATION
 	void configureServer();
 	static DWORD WINAPI acceptClients(LPVOID p);
 	int userRegister(int client);
 	int userLogin(int client);
+	void userLogout(int client, int card);
 	void sendMenu(int client);
 	void receiveOrder(int client, int card);
 };

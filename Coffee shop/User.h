@@ -15,6 +15,7 @@ using namespace std;
 #define CODE_EXIT "2000"
 #define CODE_REGISTER "3000"
 #define CODE_LOGIN "3001"
+#define CODE_LOGOUT "3002"
 #define CODE_SUCCESS "4000"
 #define CODE_ERROR "4001"
 
@@ -48,12 +49,14 @@ public:
 	//PRINTING
 	void showInfo();
 	void eraseLines(int lines);
+	void getMoney();
 
 	//SOCKET MANIPULATION
 	void order( int menusize);
 	void receiveMenu();
-	void connectToCoffeeShop();
+	bool connectToCoffeeShop();
 	void account();
 	void signin();
 	void login();
+	void logout();
 };

@@ -111,10 +111,18 @@ void User::eraseLines(int lines)
 	pos.X = 0;
 	SetConsoleCursorPosition(hConsole, pos);
 }
+
+void User::getMoney()
+{
+	int money;
+	cout << "The amount of money:" << endl;
+	cin >> money;
+	this->addToBalance(money);
+}
 #pragma endregion
 
 #pragma region SOCKET MANIPULATION
-void User::connectToCoffeeShop()
+bool User::connectToCoffeeShop()
 {
 	WSADATA wsaData;
 	int result = WSAStartup(MAKEWORD(2, 2), &wsaData);
@@ -137,70 +145,82 @@ void User::connectToCoffeeShop()
 	}
 	else
 	{
+		system("cls");
 		cout << "Coffee shop is currently closed" << endl;
 	}
 	closesocket(this->server);
 	WSACleanup();
+	if (result == 0)
+	{
+		return true;
+	}
+	else
+	{
+		return false;
+	}
 }
 
 void User::account()
 {
-	int choice;
-	cout << "Select an action: " << endl;
-	cout << "1. Register" << endl;
-	cout << "2. Login" << endl;
-	cout << "0. Exit" << endl;
-	try
+	while(1)
 	{
-		cin >> choice;
-		while (cin.fail() || choice > 2)
+		int choice;
+		system("cls");
+		cout << "Select an action: " << endl;
+		cout << "1. Register" << endl;
+		cout << "2. Login" << endl;
+		cout << "0. Exit" << endl;
+		try
 		{
-			HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
-			SetConsoleTextAttribute(hConsole, 4);
-			if (cin.fail())
-			{
-				cin.clear();
-				char c;
-				while (cin.get(c) && c != '\n') {}
-				cerr << "Please enter a number" << endl;
-			}
-			else
-			{
-				cerr << "Please enter a valid number" << endl;
-			}
-			SetConsoleTextAttribute(hConsole, 6);
 			cin >> choice;
+			while (cin.fail() || choice > 2)
+			{
+				HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
+				SetConsoleTextAttribute(hConsole, 4);
+				if (cin.fail())
+				{
+					cin.clear();
+					char c;
+					while (cin.get(c) && c != '\n') {}
+					cerr << "Please enter a number" << endl;
+				}
+				else
+				{
+					cerr << "Please enter a valid number" << endl;
+				}
+				SetConsoleTextAttribute(hConsole, 6);
+				cin >> choice;
+			}
+		}
+		catch (runtime_error& e)
+		{
+			cerr << e.what() << endl;
+		}
+
+		switch (choice)
+		{
+		case 1:
+		{
+			system("cls");
+			signin();
+		}break;
+		case 2:
+		{
+			system("cls");
+			login();
+		}break;
+		case 0:
+		{
+			//strcpy(buffer, CODE_EXIT);
+			//send(fd, buffer, 20, 0);
+			return;
+		}break;
+		default:
+		{
+			return;
+		}
 		}
 	}
-	catch (runtime_error& e)
-	{
-		cerr << e.what() << endl;
-	}
-
-	switch (choice)
-	{
-	case 1:
-	{
-		system("cls");
-		signin();
-	}break;
-	case 2:
-	{
-		system("cls");
-		login();
-	}break;
-	case 0:
-	{
-		//strcpy(buffer, CODE_EXIT);
-		//send(fd, buffer, 20, 0);
-		return;
-	}break;
-	default:
-	{
-		return;
-	}
-	}
-
 }
 
 void User::signin()
@@ -325,12 +345,13 @@ void User::receiveMenu()
 		cout << "Select an action: " << endl;
 		cout << "1. Order" << endl;
 		cout << "2. See your info" << endl;
-		cout << "3. Logout" << endl;
+		cout << "3. Add money to your balance" << endl;
+		cout << "4. Logout" << endl;
 		cout << "0. Exit" << endl;
 		try
 		{
 			cin >> choice;
-			while (cin.fail() || choice > 3)
+			while (cin.fail() || choice > 4)
 			{
 				HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
 				SetConsoleTextAttribute(hConsole, 4);
@@ -358,7 +379,7 @@ void User::receiveMenu()
 		{
 		case 1:
 		{
-			order(menuSize);
+			this->order(menuSize);
 		}break;
 		case 2:
 		{
@@ -366,12 +387,16 @@ void User::receiveMenu()
 		}break;
 		case 3:
 		{
-
+			this->getMoney();
+		}break;
+		case 4:
+		{
+			this->logout();
+			return;
 		}break;
 		case 0:
 		{
-			strcpy(buffer, CODE_EXIT);
-			send(this->server, buffer, 20, 0);
+			this->logout();
 			return;
 		}break;
 		default:
@@ -517,11 +542,35 @@ void User::order(int menuSize)
 
 	int recvSize = recv(this->server, buffer, 20, 0);
 	cout << "Your order is being processed. The price of your order is " << buffer << endl;
-	this->substractFromBalance(atoi(buffer));
+	int price = atoi(buffer);
+	if (price <= this->membershipPoints)
+	{
+		cout << "You collected enough membership points for a free drink!" << endl;
+		this->substractPoints(price);
+	}
+	else
+	{
+		this->substractFromBalance(price);
+	}
+	this->addPoints(5);
 	recvSize = recv(this->server, buffer, 20, 0);
 	if (strcmp(buffer, CODE_COMPLETED) == 0)
 	{
 		cout << "Your order is ready!" << endl;
 	}
+}
+
+void User::logout()
+{
+	char buffer[20];
+	strcpy(buffer, CODE_LOGOUT);
+	send(this->server, buffer, 20, 0);
+	string message;
+	message = to_string(this->balance);
+	strcpy(buffer, message.c_str());
+	send(this->server, buffer, 20, 0);
+	message = to_string(this->membershipPoints);
+	strcpy(buffer, message.c_str());
+	send(this->server, buffer, 20, 0);
 }
 #pragma endregion
