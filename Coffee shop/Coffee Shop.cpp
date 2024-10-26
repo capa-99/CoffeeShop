@@ -15,6 +15,7 @@ Coffee_Shop::Coffee_Shop()
 	this->menu = nullptr;
 	this->pendingOrders = nullptr;
 	this->orderNumber = 0;
+	this->userNumber = 0;
 }
 
 Coffee_Shop::Coffee_Shop(string name)
@@ -24,6 +25,7 @@ Coffee_Shop::Coffee_Shop(string name)
 	this->menu = nullptr;
 	this->pendingOrders = nullptr;
 	this->orderNumber = 0;
+	this->userNumber = 0;
 }
 
 Coffee_Shop::~Coffee_Shop()
@@ -224,6 +226,11 @@ void Coffee_Shop::addDrink()
 	{
 		this->addTea();
 	}break;
+	case 0:
+	{
+		cout << "Cancelling..." << endl;
+		return;
+	}
 	default:
 	{
 
@@ -284,6 +291,11 @@ void Coffee_Shop::addCoffee()
 	catch (runtime_error& e)
 	{
 		cerr << e.what() << endl;
+	}
+	if (h == 0)
+	{
+		cout << "Cancelling..." << endl;
+		return;
 	}
 	Coffee* coffee = new Coffee((coffeeType)(h-1), n, p);
 	Beverage** tmp = this->menu;
@@ -352,6 +364,11 @@ void Coffee_Shop::addTea()
 	{
 		cerr << e.what() << endl;
 	}
+	if (h == 0)
+	{
+		cout << "Cancelling..." << endl;
+		return;
+	}
 	Tea* tea = new Tea((teaType)(h-1), n, p);
 	Beverage** tmp = this->menu;
 	this->menuSize++;
@@ -398,6 +415,7 @@ void Coffee_Shop::editDrinkPrice()
 	}
 	if (drink == 0)
 	{
+		cout << "Cancelling..." << endl;
 		return;
 	}
 	cout << "Enter the new price: ";
@@ -455,6 +473,7 @@ void Coffee_Shop::deleteDrink()
 	}
 	if (drink == 0)
 	{
+		cout << "Cancelling..." << endl;
 		return;
 	}
 	this->menuSize--;
@@ -487,43 +506,51 @@ void Coffee_Shop::deleteOrder(int order)
 
 void Coffee_Shop::completeOrder()
 {
-	int order;
-	cout << "Choose the order you want to complete: ";
-	try
+	if (this->orderNumber == 0)
 	{
-		cin >> order;
-		while (cin.fail() || order > this->orderNumber)
+		cout << "There are no new orders to complete" << endl;
+	}
+	else
+	{
+		int order;
+		cout << "Choose the order you want to complete: ";
+		try
 		{
-			HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
-			SetConsoleTextAttribute(hConsole, 4);
-			if (cin.fail())
-			{
-				cin.clear();
-				char c;
-				while (cin.get(c) && c != '\n') {}
-				cerr << "Please enter a number" << endl;
-			}
-			else
-			{
-				cerr << "Please enter a valid number" << endl;
-			}
-			SetConsoleTextAttribute(hConsole, 14);
 			cin >> order;
+			while (cin.fail() || order > this->orderNumber)
+			{
+				HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
+				SetConsoleTextAttribute(hConsole, 4);
+				if (cin.fail())
+				{
+					cin.clear();
+					char c;
+					while (cin.get(c) && c != '\n') {}
+					cerr << "Please enter a number" << endl;
+				}
+				else
+				{
+					cerr << "Please enter a valid number" << endl;
+				}
+				SetConsoleTextAttribute(hConsole, 14);
+				cin >> order;
+			}
 		}
-	}
-	catch (runtime_error& e)
-	{
-		cerr << e.what() << endl;
-	}
-	if (order == 0)
-	{
-		return;
-	}
-	char buffer[20];
-	strcpy(buffer, CODE_COMPLETED);
-	send(this->pendingOrders[order-1]->getAddress(), buffer, 20, 0);
+		catch (runtime_error& e)
+		{
+			cerr << e.what() << endl;
+		}
+		if (order == 0)
+		{
+			cout << "Cancelling..." << endl;
+			return;
+		}
+		char buffer[20];
+		strcpy(buffer, CODE_COMPLETED);
+		send(this->pendingOrders[order - 1]->getAddress(), buffer, 20, 0);
 
-	this->deleteOrder(order - 1);
+		this->deleteOrder(order - 1);
+	}
 }
 #pragma endregion
 
@@ -662,6 +689,13 @@ void Coffee_Shop::updateUserToFile(int card, int balance, int points)
 #pragma endregion
 
 #pragma region SOKCKET COMMUNICATION
+
+struct ThreadParams
+{
+	Coffee_Shop* instance;
+	int client;
+};
+
 void Coffee_Shop::configureServer()
 {
 	WSADATA wsaData;
@@ -709,50 +743,69 @@ DWORD WINAPI Coffee_Shop::acceptClients(LPVOID p)
 		int client = accept(instance->serverFD, (struct sockaddr*)&clientAddr, &clientAddrSize);
 		if (client >= 0)
 		{
-			int user;
-			char buffer[20];
-			int recvSize = recv(client, buffer, 20, 0);
-			if (strcmp(buffer, CODE_REGISTER) == 0)
-			{
-				user = instance->userRegister(client);
-				instance->sendMenu(client);
-				recvSize = recv(client, buffer, 20, 0);
-				while (strcmp(buffer, CODE_LOGOUT) != 0)
-				{
-					if (strcmp(buffer, CODE_ORDER) == 0)
-					{
-						instance->receiveOrder(client, user);
-					}
-					recvSize = recv(client, buffer, 20, 0);
-				}
-				instance->userLogout(client, user);
-			}
-			else if (strcmp(buffer, CODE_LOGIN) == 0)
-			{
-				user = instance->userLogin(client);
-				instance->sendMenu(client);
-				recvSize = recv(client, buffer, 20, 0);
-				while (strcmp(buffer, CODE_LOGOUT) != 0)
-				{
-					if (strcmp(buffer, CODE_ORDER) == 0)
-					{
-						instance->receiveOrder(client, user);
-					}
-					recvSize = recv(client, buffer, 20, 0);
-				}
-				instance->userLogout(client, user);
-			}
-			else
-			{
-
-			}
-			closesocket(client);
+			ThreadParams tp;
+			tp.instance = instance;
+			tp.client = client;
+			DWORD threadID;
+			HANDLE thr = CreateThread(NULL, 0, clientService, &tp, 0, &threadID);
 		}
 		else
 		{
 			cout << "Couldn't accept connection" << endl;
 		}
 	}
+	return 0;
+}
+
+DWORD WINAPI Coffee_Shop::clientService(LPVOID p)
+{
+	ThreadParams* tp = static_cast<ThreadParams*>(p);
+
+	int user;
+	char buffer[20];
+	int recvSize = recv(tp->client, buffer, 20, 0);
+	while (strcmp(buffer, CODE_EXIT) != 0)
+	{
+		if (strcmp(buffer, CODE_REGISTER) == 0)
+		{
+			user = tp->instance->userRegister(tp->client);
+			tp->instance->sendMenu(tp->client);
+			recvSize = recv(tp->client, buffer, 20, 0);
+			while (strcmp(buffer, CODE_LOGOUT) != 0)
+			{
+				if (strcmp(buffer, CODE_ORDER) == 0)
+				{
+					tp->instance->receiveOrder(tp->client, user);
+				}
+				recvSize = recv(tp->client, buffer, 20, 0);
+			}
+			tp->instance->userLogout(tp->client, user);
+		}
+		else if (strcmp(buffer, CODE_LOGIN) == 0)
+		{
+			user = tp->instance->userLogin(tp->client);
+			if (user != -1)
+			{
+				tp->instance->sendMenu(tp->client);
+				recvSize = recv(tp->client, buffer, 20, 0);
+				while (strcmp(buffer, CODE_LOGOUT) != 0)
+				{
+					if (strcmp(buffer, CODE_ORDER) == 0)
+					{
+						tp->instance->receiveOrder(tp->client, user);
+					}
+					recvSize = recv(tp->client, buffer, 20, 0);
+				}
+				tp->instance->userLogout(tp->client, user);
+			}
+		}
+		else
+		{
+
+		}
+		recvSize = recv(tp->client, buffer, 20, 0);
+	}
+	closesocket(tp->client);
 	return 0;
 }
 
@@ -783,32 +836,44 @@ int Coffee_Shop::userLogin(int client)
 	int index = distance(this->users.begin(), find(this->users.begin(), this->users.end(), card));
 	recvSize = recv(client, buffer, 20, 0);
 	string pin = buffer;
-	string data = this->readUserFromFile(index);
-	string PIN;
-	istringstream ss(data);
-	getline(ss, PIN, ' ');
-	getline(ss, PIN, ' ');
-	if (PIN == pin)
+	if (index == this->userNumber)
 	{
-		strcpy(buffer, CODE_SUCCESS);
+		strcpy(buffer, CODE_CARD_MALFUNCTION);
+		send(client, buffer, 20, 0);
+		return -1;
 	}
 	else
 	{
-		strcpy(buffer, CODE_ERROR);
-	}
-	send(client, buffer, 20, 0);
-	
-	getline(ss, PIN, ' ');
-	strcpy(buffer, PIN.c_str());
-	send(client, buffer, 20, 0);
-	getline(ss, PIN, ' ');
-	strcpy(buffer, PIN.c_str());
-	send(client, buffer, 20, 0);
-	getline(ss, PIN, ' ');
-	strcpy(buffer, PIN.c_str());
-	send(client, buffer, 20, 0);
+		string data = this->readUserFromFile(index);
+		string PIN;
+		istringstream ss(data);
+		getline(ss, PIN, ' ');
+		getline(ss, PIN, ' ');
+		if (PIN == pin)
+		{
+			strcpy(buffer, CODE_SUCCESS);
+			send(client, buffer, 20, 0);
 
-	return this->users[index];
+			getline(ss, PIN, ' ');
+			strcpy(buffer, PIN.c_str());
+			send(client, buffer, 20, 0);
+			getline(ss, PIN, ' ');
+			strcpy(buffer, PIN.c_str());
+			send(client, buffer, 20, 0);
+			getline(ss, PIN, ' ');
+			strcpy(buffer, PIN.c_str());
+			send(client, buffer, 20, 0);
+
+			return this->users[index];
+		}
+		else
+		{
+			strcpy(buffer, CODE_WRONG_PIN);
+			send(client, buffer, 20, 0);
+
+			return -1;
+		}
+	}
 }
 
 void Coffee_Shop::userLogout(int client, int card)

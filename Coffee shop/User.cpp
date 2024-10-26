@@ -307,9 +307,13 @@ void User::login()
 		this->membershipPoints = card;
 		receiveMenu();
 	}
-	else
+	else if(strcmp(buffer, CODE_CARD_MALFUNCTION))
 	{
-		cout << "WRONG" << endl;
+		cout << "Your card is broken" << endl;
+	}
+	else if (strcmp(buffer, CODE_WRONG_PIN))
+	{
+		cout << "Your PIN is incorrect" << endl;
 	}
 }
 

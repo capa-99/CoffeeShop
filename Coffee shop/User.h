@@ -18,6 +18,8 @@ using namespace std;
 #define CODE_LOGOUT "3002"
 #define CODE_SUCCESS "4000"
 #define CODE_ERROR "4001"
+#define CODE_CARD_MALFUNCTION "4002"
+#define CODE_WRONG_PIN "4003"
 
 class User
 {
