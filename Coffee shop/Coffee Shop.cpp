@@ -934,11 +934,15 @@ void Coffee_Shop::receiveOrder(int client, int card)
 	}
 	if (recvSize > 0)
 	{
-		this->addOrder(o);
 		o->calculatePrice();
 		o->setAddress(client);
 		strcpy(buffer, to_string(o->getPrice()).c_str());
 		send(client, buffer, 20, 0);
+		recvSize = recv(client, buffer, 20, 0);
+		if (strcmp(buffer, CODE_SUCCESS))
+		{
+			this->addOrder(o);
+		}
 	}
 }
 #pragma endregion

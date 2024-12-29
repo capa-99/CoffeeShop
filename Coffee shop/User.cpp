@@ -545,22 +545,43 @@ void User::order(int menuSize)
 	send(this->server, buffer, 20, 0);
 
 	int recvSize = recv(this->server, buffer, 20, 0);
-	cout << "Your order is being processed. The price of your order is " << buffer << endl;
+	cout << "The price of your order is " << buffer << endl;
 	int price = atoi(buffer);
 	if (price <= this->membershipPoints)
 	{
 		cout << "You collected enough membership points for a free drink!" << endl;
+		cout << "Your order is being processed." << endl;
 		this->substractPoints(price);
+		this->addPoints(5);
+		strcpy(buffer, CODE_SUCCESS);
+		send(this->server, buffer, 20, 0);
+		recvSize = recv(this->server, buffer, 20, 0);
+		if (strcmp(buffer, CODE_COMPLETED) == 0)
+		{
+			cout << "Your order is ready!" << endl;
+		}
 	}
 	else
 	{
-		this->substractFromBalance(price);
-	}
-	this->addPoints(5);
-	recvSize = recv(this->server, buffer, 20, 0);
-	if (strcmp(buffer, CODE_COMPLETED) == 0)
-	{
-		cout << "Your order is ready!" << endl;
+		if (price <= this->balance)
+		{
+			cout << "Your order is being processed." << endl;
+			this->substractFromBalance(price);
+			this->addPoints(5);
+			strcpy(buffer, CODE_SUCCESS);
+			send(this->server, buffer, 20, 0);
+			recvSize = recv(this->server, buffer, 20, 0);
+			if (strcmp(buffer, CODE_COMPLETED) == 0)
+			{
+				cout << "Your order is ready!" << endl;
+			}
+		}
+		else
+		{
+			cout << "You don't have enought money to buy this drink" << endl;
+			strcpy(buffer, CODE_ERROR);
+			send(this->server, buffer, 20, 0);
+		}
 	}
 }
 
